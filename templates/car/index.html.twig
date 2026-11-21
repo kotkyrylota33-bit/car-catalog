@@ -1,20 +1,48 @@
-{% extends 'base.html.twig' %}
+ {% extends 'base.html.twig' %}
 
-{% block title %}Hello CarController!{% endblock %}
+{% block title %}Каталог автомобілів{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
-
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>D:/car-catalog/src/Controller/CarController.php</code></li>
-        <li>Your template at <code>D:/car-catalog/templates/car/index.html.twig</code></li>
-    </ul>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ path('app_car_index') }}" class="row g-2 align-items-center">
+            <div class="col-md-8">
+                <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Пошук за маркою, моделлю або двигуном...">
+            </div>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-primary w-100">Шукати</button>
+            </div>
+            {% if q %}
+                <div class="col-md-auto">
+                    <a href="{{ path('app_car_index') }}" class="btn btn-outline-secondary w-100">Скинути</a>
+                </div>
+            {% endif %}
+        </form>
+    </div>
 </div>
+
+{% if cars is empty %}
+    <div class="alert alert-info">Автомобілів не знайдено.</div>
+{% else %}
+    <div class="row g-4">
+        {% for car in cars %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-secondary">{{ car.brand }}</span>
+                            <span class="text-muted small">{{ car.year }} р.</span>
+                        </div>
+                        <h5 class="card-title fw-bold mb-1">{{ car.brand }} {{ car.model }}</h5>
+                        <p class="text-muted small mb-3">Двигун: {{ car.engine }}</p>
+                        <div class="mt-auto d-flex justify-content-between align-items-center pt-3 border-top">
+                            <span class="fs-5 fw-bold text-success">${{ car.price|number_format(0, '.', ' ') }}</span>
+                            <a href="{{ path('app_car_show', {id: car.id}) }}" class="btn btn-outline-primary btn-sm">Детальніше →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 {% endblock %}
