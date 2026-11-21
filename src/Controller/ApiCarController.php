@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/cars')]
 class ApiCarController extends AbstractController
@@ -70,22 +71,35 @@ class ApiCarController extends AbstractController
     public function create(
         Request $request,
         BrandRepository $brandRepository,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        ValidatorInterface $validator
     ): JsonResponse {
         $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->prettyJson(['error' => 'Invalid JSON payload'], 400);
+        }
 
         $brand = $brandRepository->find($payload['brand_id'] ?? 0);
         if (!$brand) {
-            return $this->prettyJson(['error' => 'Brand not found'], 400);
+            return $this->prettyJson(['error' => 'Brand not found'], 404);
         }
 
         $car = new Car();
         $car->setBrand($brand);
-        $car->setModel($payload['model'] ?? 'Unknown');
-        $car->setYear((int)($payload['year'] ?? 2020));
-        $car->setEngine($payload['engine'] ?? '2.0');
-        $car->setPrice((int)($payload['price'] ?? 10000));
+        $car->setModel($payload['model'] ?? '');
+        $car->setYear(isset($payload['year']) ? (int) $payload['year'] : null);
+        $car->setEngine($payload['engine'] ?? '');
+        $car->setPrice(isset($payload['price']) ? (int) $payload['price'] : null);
         $car->setDescription($payload['description'] ?? '');
+
+        $errors = $validator->validate($car);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
+            }
+            return $this->prettyJson(['errors' => $errorMessages], 422);
+        }
 
         $em->persist($car);
         $em->flush();
